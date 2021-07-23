@@ -1,0 +1,7 @@
+﻿[*.cs]
+
+# IDE0090: Use 'new(...)'
+dotnet_diagnostic.IDE0090.severity = none
+
+# CS0649: Field 'BlockSpawner._blockParent' is never assigned to, and will always have its default value null
+dotnet_diagnostic.CS0649.severity = none

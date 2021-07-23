@@ -1,0 +1,16 @@
+{
+    "name": "Puzzle",
+    "rootNamespace": "",
+    "references": [
+        "GUID:fe6e2d6d99ee3424d9ec3a89c39b3f9f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
