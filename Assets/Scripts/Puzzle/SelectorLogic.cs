@@ -8,10 +8,10 @@ namespace PuzzleLeague.Puzzle
         private const uint GRID_WIDTH = 6;
         private const uint GRID_HEIGHT = 13;
 
-        [SerializeField] private GameObject _leftSelector;
-        [SerializeField] private GameObject _rightSelector;
+        [SerializeField] private readonly GameObject _leftSelector;
+        [SerializeField] private readonly GameObject _rightSelector;
 
-        private enum MoveOption
+        public enum MoveOption
         {
             LEFT,
             RIGHT,
@@ -49,7 +49,7 @@ namespace PuzzleLeague.Puzzle
             }
         }
 
-        private void Move(MoveOption direction)
+        public void Move(MoveOption direction)
         {
             switch (direction)
             {

@@ -20,7 +20,7 @@ public static class Utility
             "5F0E9A" => "PURPLE",
             "D44131" => "RED",
             "DDD52D" => "YELLOW",
-            _ => $"Color {color} is not defined",
+            _ => "Color is not defined!",
         };
     }
 }

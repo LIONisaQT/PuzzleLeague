@@ -10,7 +10,7 @@ namespace PuzzleLeague.Puzzle
 
         private bool _isFalling = false;
         private float _previousVelocity;
-        private float _lookDistance = 1f;
+        private readonly float _lookDistance = 1f;
 
         private List<Block> _blocksToDestroy;
 
