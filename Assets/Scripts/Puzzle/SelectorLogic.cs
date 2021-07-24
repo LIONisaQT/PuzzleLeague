@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace PuzzleLeague.Puzzle
@@ -8,8 +9,13 @@ namespace PuzzleLeague.Puzzle
         private const uint GRID_WIDTH = 6;
         private const uint GRID_HEIGHT = 13;
 
-        [SerializeField] private readonly GameObject _leftSelector;
-        [SerializeField] private readonly GameObject _rightSelector;
+        [SerializeField] private GameObject _leftSelector;
+        [SerializeField] private GameObject _rightSelector;
+
+#nullable enable
+        private Block? _leftBlock;
+        private Block? _rightBlock;
+#nullable disable
 
         public enum MoveOption
         {
@@ -28,6 +34,7 @@ namespace PuzzleLeague.Puzzle
             HandleDelete();
         }
 
+        #region Movement logic
         private void HandleMovement()
         {
             // TODO: Allow custom keys.
@@ -83,7 +90,25 @@ namespace PuzzleLeague.Puzzle
                     break;
             }
         }
+        private bool IsValidMove()
+        {
+            foreach (Transform children in transform)
+            {
+                var roundedX = Mathf.RoundToInt(children.transform.position.x);
+                var roundedY = Mathf.RoundToInt(children.transform.position.y);
 
+                // TODO: Disallow selector to go below/above play area.
+                if (roundedX < 0 || roundedX >= GRID_WIDTH || roundedY < 0 || roundedY >= GRID_HEIGHT)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        #endregion
+
+        #region Swap logic
         /// <summary>
         /// Using raycast to find blocks because I'm too dumb to figure out a
         /// grid system. That also means the z position of the selector is <0
@@ -97,17 +122,52 @@ namespace PuzzleLeague.Puzzle
                 var leftHit = Utility.GetRaycastResultCollider(_leftSelector.transform.position, _leftSelector.transform.TransformDirection(Vector3.forward));
                 if (leftHit)
                 {
+                    _leftBlock = leftHit.gameObject.GetComponent<Block>();
                     DoSwap(leftHit.gameObject.transform, true);
                 }
 
                 var rightHit = Utility.GetRaycastResultCollider(_rightSelector.transform.position, _leftSelector.transform.TransformDirection(Vector3.forward));
                 if (rightHit)
                 {
+                    _rightBlock = rightHit.gameObject.GetComponent<Block>();
                     DoSwap(rightHit.gameObject.transform, false);
                 }
+
+                StartCoroutine(DoBlockOnSwapMethodAfterDelay());
             }
         }
 
+        private void DoSwap(Transform tf, bool isLeft)
+        {
+            var newPostion = new Vector3(tf.position.x + (isLeft ? 1 : -1), tf.position.y, tf.position.z);
+            tf.SetPositionAndRotation(newPostion, tf.rotation);
+        }
+
+        /// <summary>
+        /// Delays blocks' OnSwap() call by a fraction of a second because
+        /// otherwise, the swapped blocks will just compare each other.
+        /// </summary>
+        private IEnumerator DoBlockOnSwapMethodAfterDelay()
+        {
+            yield return new WaitForSeconds(0.01f);
+
+            if (_leftBlock != null)
+            {
+                _leftBlock.OnSwap(true);
+                _leftBlock = null;
+            }
+
+            if (_rightBlock != null)
+            {
+                _rightBlock.OnSwap(false);
+                _rightBlock = null;
+            }
+
+            yield return null;
+        }
+        #endregion
+
+        #region Utility methods
         private void HandleDelete()
         {
             if (Input.GetKeyDown(KeyCode.Backspace))
@@ -125,29 +185,6 @@ namespace PuzzleLeague.Puzzle
                 }
             }
         }
-
-        private void DoSwap(Transform tf, bool isLeft)
-        {
-            var newPostion = new Vector3(tf.position.x + (isLeft ? 1 : -1), tf.position.y, tf.position.z);
-            tf.SetPositionAndRotation(newPostion, tf.rotation);
-            tf.GetComponent<Block>().OnSwap();
-        }
-
-        private bool IsValidMove()
-        {
-            foreach (Transform children in transform)
-            {
-                var roundedX = Mathf.RoundToInt(children.transform.position.x);
-                var roundedY = Mathf.RoundToInt(children.transform.position.y);
-
-                // TODO: Disallow selector to go below/above play area.
-                if (roundedX < 0 || roundedX >= GRID_WIDTH || roundedY < 0 || roundedY >= GRID_HEIGHT)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
+        #endregion
     }
 }

@@ -46,6 +46,7 @@ namespace PuzzleLeague.Puzzle
             }
         }
 
+        #region Utility methods
         /// <summary>
         /// Finds lowest y position to place an incoming block for a given
         /// column. If there are no blocks at the base level, sets to block
@@ -63,5 +64,6 @@ namespace PuzzleLeague.Puzzle
                 Destroy(child.gameObject);
             }
         }
+        #endregion
     }
 }

@@ -12,17 +12,18 @@ namespace PuzzleLeague.Puzzle
         private float _previousVelocity;
         private readonly float _lookDistance = 1f;
 
-        private List<Block> _blocksToDestroy;
+        private bool _isInCombo = false;
+        private bool _swapFromLeft = false;
 
         private void Awake()
         {
             _rb2d = GetComponent<Rigidbody2D>();
             _spriteRenderer = GetComponent<SpriteRenderer>();
-            _blocksToDestroy = new List<Block>();
         }
 
-        public void OnSwap()
+        public void OnSwap(bool swapFromLeft)
         {
+            _swapFromLeft = swapFromLeft;
             CheckBelow();
         }
 
@@ -57,69 +58,52 @@ namespace PuzzleLeague.Puzzle
             }
         }
 
+        #region Neighbor calculations
         private void CompareNeighbors()
         {
-            // Change layer because it was colliding with itself, but setting "Queries Start In Colliders" in Physics2D settings broke raycasts.
-            gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
+            var totalBlocksInCombo = new List<Block>();
+            var directionalBlockList = new List<Block>();
 
-            var adjacentBlock = GetAdjacentBlock(transform.TransformDirection(Vector3.left));
-            if (adjacentBlock != null)
+            if (!_swapFromLeft)
             {
-                if (GetColor() == adjacentBlock.GetColor())
-                {
-                    _blocksToDestroy.Add(adjacentBlock);
-                }
-            }
-
-            adjacentBlock = GetAdjacentBlock(transform.TransformDirection(Vector3.right));
-            if (adjacentBlock != null)
-            {
-                if (GetColor() == adjacentBlock.GetColor())
-                {
-                    _blocksToDestroy.Add(adjacentBlock);
-                }
-            }
-
-            adjacentBlock = GetAdjacentBlock(transform.TransformDirection(Vector3.up));
-            if (adjacentBlock != null)
-            {
-                if (GetColor() == adjacentBlock.GetColor())
-                {
-                    _blocksToDestroy.Add(adjacentBlock);
-                }
-            }
-
-            adjacentBlock = GetAdjacentBlock(transform.TransformDirection(Vector3.down));
-            if (adjacentBlock != null)
-            {
-                if (GetColor() == adjacentBlock.GetColor())
-                {
-                    _blocksToDestroy.Add(adjacentBlock);
-                }
-            }
-
-            if (_blocksToDestroy.Count > 0)
-            {
-                _blocksToDestroy.Add(this);
-                DeleteBlocks(_blocksToDestroy);
+                GetNeighborsInDirectionRecursive(this, Vector3.left, directionalBlockList);
+                HandleNeighborsList(directionalBlockList, totalBlocksInCombo);
             }
             else
             {
-                gameObject.layer = LayerMask.NameToLayer("Default");
+                GetNeighborsInDirectionRecursive(this, Vector3.right, directionalBlockList);
+                HandleNeighborsList(directionalBlockList, totalBlocksInCombo);
             }
+
+            GetNeighborsInDirectionRecursive(this, Vector3.up, directionalBlockList);
+            HandleNeighborsList(directionalBlockList, totalBlocksInCombo);
+
+            GetNeighborsInDirectionRecursive(this, Vector3.down, directionalBlockList);
+            HandleNeighborsList(directionalBlockList, totalBlocksInCombo);
+
+            DeleteBlocks(totalBlocksInCombo);
         }
 
-        private void DeleteBlocks(List<Block> blocks)
+        private void GetNeighborsInDirectionRecursive(Block start, Vector3 direction, List<Block> blockList)
         {
-            foreach (var block in blocks)
+            // Need to change raycast layer because starting block will block 2D raycasts.
+            start.gameObject.layer = LayerMask.NameToLayer("Ignore Raycast");
+            var adjacentBlock = start.GetAdjacentBlock(start.transform.TransformDirection(direction));
+            start.gameObject.layer = LayerMask.NameToLayer("Default");
+
+            if (adjacentBlock == null)
             {
-                Destroy(block.gameObject);
+                return;
             }
+
+            if (start.GetColor() != adjacentBlock.GetColor())
+            {
+                return;
+            }
+
+            blockList.Add(adjacentBlock);
+            GetNeighborsInDirectionRecursive(adjacentBlock, direction, blockList);
         }
-
-        public void EnableRigidbody(bool enable) => _rb2d.bodyType = enable ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
-
-        public string GetColor() => Utility.GetColorName(_spriteRenderer.color);
 
         private Block GetAdjacentBlock(Vector3 direction)
         {
@@ -134,5 +118,37 @@ namespace PuzzleLeague.Puzzle
 
             return null;
         }
+
+        private void HandleNeighborsList(List<Block> directionalBlockList, List<Block> totalBlocksInCombo)
+        {
+            if (directionalBlockList.Count >= 2)
+            {
+                if (!_isInCombo)
+                {
+                    directionalBlockList.Add(this);
+                    _isInCombo = true;
+                }
+                totalBlocksInCombo.AddRange(directionalBlockList);
+            }
+            directionalBlockList.Clear();
+        }
+
+        private void DeleteBlocks(List<Block> blocks)
+        {
+            foreach (var block in blocks)
+            {
+                Destroy(block.gameObject);
+            }
+            blocks.Clear();
+        }
+        #endregion
+
+        #region Utility methods
+        public void EnableRigidbody(bool enable) => _rb2d.bodyType = enable ? RigidbodyType2D.Dynamic : RigidbodyType2D.Kinematic;
+
+        public string GetColor() => Utility.GetColorName(_spriteRenderer.color);
+
+        public void SetColor(Color color) => _spriteRenderer.color = color;
+        #endregion
     }
 }
